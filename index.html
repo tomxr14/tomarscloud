@@ -13,7 +13,7 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: #f7f7f7;
+            background: #f0f8ff;
             display: flex;
             height: 100vh;
             color: #333;
@@ -22,15 +22,16 @@
         .sidebar {
             width: 260px;
             background: #fff;
-            border-right: 1px solid #e0e0e0;
+            border-right: 1px solid #e8f0ff;
             padding: 20px;
             overflow-y: auto;
+            box-shadow: 0 1px 3px rgba(135, 206, 235, 0.1);
         }
         
         .logo {
             font-size: 22px;
             font-weight: 700;
-            color: #15A34C;
+            color: #4a90e2;
             margin-bottom: 30px;
             display: flex;
             align-items: center;
@@ -44,7 +45,7 @@
         .nav-label {
             font-size: 11px;
             font-weight: 700;
-            color: #999;
+            color: #b0c4de;
             text-transform: uppercase;
             margin-bottom: 10px;
             letter-spacing: 0.5px;
@@ -57,35 +58,35 @@
             cursor: pointer;
             font-size: 14px;
             transition: all 0.2s;
-            color: #555;
+            color: #666;
             display: flex;
             align-items: center;
             gap: 10px;
         }
         
         .nav-item:hover {
-            background: #f5f5f5;
-            color: #15A34C;
+            background: #f0f8ff;
+            color: #4a90e2;
         }
         
         .nav-item.active {
-            background: linear-gradient(135deg, #15A34C 0%, #FFA500 100%);
+            background: linear-gradient(135deg, #87ceeb 0%, #b0e0e6 100%);
             color: #fff;
             font-weight: 600;
         }
         
         .storage-widget {
-            background: linear-gradient(135deg, #f0fdf4 0%, #fffbe6 100%);
+            background: linear-gradient(135deg, #f0f8ff 0%, #e0f6ff 100%);
             padding: 15px;
             border-radius: 8px;
             margin-top: 30px;
-            border-left: 4px solid #15A34C;
+            border-left: 4px solid #87ceeb;
         }
         
         .storage-label {
             font-size: 11px;
             font-weight: 700;
-            color: #FFA500;
+            color: #6fa3d4;
             text-transform: uppercase;
             margin-bottom: 8px;
             letter-spacing: 0.5px;
@@ -94,7 +95,7 @@
         .storage-bar {
             width: 100%;
             height: 6px;
-            background: #e0e0e0;
+            background: #e8f4f8;
             border-radius: 3px;
             overflow: hidden;
             margin-bottom: 8px;
@@ -103,7 +104,7 @@
         .storage-fill {
             height: 100%;
             width: 9.2%;
-            background: linear-gradient(90deg, #15A34C 0%, #FFA500 100%);
+            background: linear-gradient(90deg, #87ceeb 0%, #b0e0e6 100%);
             border-radius: 3px;
         }
         
@@ -116,7 +117,7 @@
         
         .storage-available {
             font-size: 12px;
-            color: #15A34C;
+            color: #4a90e2;
             font-weight: 600;
         }
         
@@ -128,10 +129,10 @@
         }
         
         .header {
-            background: linear-gradient(135deg, #15A34C 0%, #FFA500 100%);
+            background: linear-gradient(135deg, #87ceeb 0%, #b0e0e6 100%);
             color: #fff;
             padding: 30px 40px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(135, 206, 235, 0.2);
         }
         
         .header h1 {
@@ -153,7 +154,7 @@
         .section-title {
             font-size: 16px;
             font-weight: 700;
-            color: #15A34C;
+            color: #4a90e2;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
@@ -169,18 +170,18 @@
         
         .file-card {
             background: #fff;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #e8f0ff;
             border-radius: 8px;
             padding: 16px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(135, 206, 235, 0.1);
         }
         
         .file-card:hover {
-            border-color: #FFA500;
-            box-shadow: 0 4px 12px rgba(21, 163, 76, 0.15);
+            border-color: #87ceeb;
+            box-shadow: 0 4px 12px rgba(135, 206, 235, 0.2);
             transform: translateY(-2px);
         }
         
@@ -203,13 +204,13 @@
         }
         
         .folder-card {
-            background: linear-gradient(135deg, rgba(21, 163, 76, 0.08) 0%, rgba(255, 165, 0, 0.08) 100%);
-            border: 2px dashed #15A34C;
+            background: linear-gradient(135deg, rgba(135, 206, 235, 0.08) 0%, rgba(176, 224, 230, 0.08) 100%);
+            border: 2px dashed #87ceeb;
         }
         
         .folder-card:hover {
-            border-color: #FFA500;
-            background: linear-gradient(135deg, rgba(21, 163, 76, 0.15) 0%, rgba(255, 165, 0, 0.15) 100%);
+            border-color: #6fa3d4;
+            background: linear-gradient(135deg, rgba(135, 206, 235, 0.15) 0%, rgba(176, 224, 230, 0.15) 100%);
         }
         
         .action-bar {
@@ -220,7 +221,7 @@
         
         .btn {
             padding: 10px 20px;
-            background: linear-gradient(135deg, #15A34C 0%, #FFA500 100%);
+            background: linear-gradient(135deg, #87ceeb 0%, #b0e0e6 100%);
             color: #fff;
             border: none;
             border-radius: 6px;
@@ -228,12 +229,16 @@
             font-weight: 600;
             font-size: 13px;
             transition: all 0.3s;
-            box-shadow: 0 2px 6px rgba(21, 163, 76, 0.2);
+            box-shadow: 0 2px 6px rgba(135, 206, 235, 0.2);
         }
         
         .btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(21, 163, 76, 0.3);
+            box-shadow: 0 4px 12px rgba(135, 206, 235, 0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
         }
         
         .stats {
@@ -245,10 +250,10 @@
         
         .stat-card {
             background: #fff;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #e8f0ff;
             padding: 18px;
             border-radius: 8px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 1px 3px rgba(135, 206, 235, 0.1);
         }
         
         .stat-label {
@@ -262,14 +267,67 @@
         .stat-value {
             font-size: 24px;
             font-weight: 700;
-            color: #15A34C;
+            color: #4a90e2;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            max-width: 400px;
+        }
+        
+        .modal-content h2 {
+            color: #4a90e2;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .modal-content p {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .modal-btn {
+            padding: 10px 25px;
+            background: linear-gradient(135deg, #87ceeb 0%, #b0e0e6 100%);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .modal-btn:hover {
+            box-shadow: 0 4px 12px rgba(135, 206, 235, 0.3);
         }
     </style>
 </head>
 <body>
     <!-- Sidebar -->
     <div class="sidebar">
-        <div class="logo">☘️ TomarsCloud</div>
+        <div class="logo">☁️ TomarsCloud</div>
         
         <div class="nav-section">
             <div class="nav-label">Main</div>
@@ -323,24 +381,24 @@
             
             <!-- Action Bar -->
             <div class="action-bar">
-                <button class="btn">+ New Folder</button>
-                <button class="btn">📤 Upload</button>
+                <button class="btn" onclick="showModal('new-folder')">+ New Folder</button>
+                <button class="btn" onclick="showModal('upload')">📤 Upload</button>
             </div>
             
             <!-- Folders Section -->
             <div class="section-title">📂 My Folders</div>
             <div class="file-grid">
-                <div class="file-card folder-card">
+                <div class="file-card folder-card" onclick="showModal('open-folder', 'Documents')">
                     <div class="file-icon">📂</div>
                     <div class="file-name">Documents</div>
                     <div class="file-size">4 files</div>
                 </div>
-                <div class="file-card folder-card">
+                <div class="file-card folder-card" onclick="showModal('open-folder', 'Photos')">
                     <div class="file-icon">🖼️</div>
                     <div class="file-name">Photos</div>
                     <div class="file-size">8 files</div>
                 </div>
-                <div class="file-card folder-card">
+                <div class="file-card folder-card" onclick="showModal('open-folder', 'Music')">
                     <div class="file-icon">🎵</div>
                     <div class="file-name">Music</div>
                     <div class="file-size">2 files</div>
@@ -350,22 +408,22 @@
             <!-- Recent Files Section -->
             <div class="section-title">📄 Recent Files</div>
             <div class="file-grid">
-                <div class="file-card">
+                <div class="file-card" onclick="showModal('open-file', 'Presentation.pdf')">
                     <div class="file-icon">📄</div>
                     <div class="file-name">Presentation.pdf</div>
                     <div class="file-size">2.4 MB</div>
                 </div>
-                <div class="file-card">
+                <div class="file-card" onclick="showModal('open-file', 'Photo.jpg')">
                     <div class="file-icon">🖼️</div>
                     <div class="file-name">Photo.jpg</div>
                     <div class="file-size">3.1 MB</div>
                 </div>
-                <div class="file-card">
+                <div class="file-card" onclick="showModal('open-file', 'Budget.xlsx')">
                     <div class="file-icon">📊</div>
                     <div class="file-name">Budget.xlsx</div>
                     <div class="file-size">1.2 MB</div>
                 </div>
-                <div class="file-card">
+                <div class="file-card" onclick="showModal('open-file', 'Tutorial.mp4')">
                     <div class="file-icon">🎬</div>
                     <div class="file-name">Tutorial.mp4</div>
                     <div class="file-size">156 MB</div>
@@ -373,5 +431,52 @@
             </div>
         </div>
     </div>
+    
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modal-title"></h2>
+            <p id="modal-message"></p>
+            <button class="modal-btn" onclick="closeModal()">OK</button>
+        </div>
+    </div>
+    
+    <script>
+        function showModal(type, name = '') {
+            const modal = document.getElementById('modal');
+            const title = document.getElementById('modal-title');
+            const message = document.getElementById('modal-message');
+            
+            switch(type) {
+                case 'new-folder':
+                    title.textContent = 'Create New Folder';
+                    message.textContent = 'Enter folder name...';
+                    break;
+                case 'upload':
+                    title.textContent = 'Upload Files';
+                    message.textContent = 'Click to select files from your device';
+                    break;
+                case 'open-folder':
+                    title.textContent = `Opening: ${name}`;
+                    message.textContent = 'Displaying folder contents...';
+                    break;
+                case 'open-file':
+                    title.textContent = `Opening: ${name}`;
+                    message.textContent = 'Loading file...';
+                    break;
+            }
+            
+            modal.classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+        
+        // Close modal when clicking outside
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if(e.target === this) closeModal();
+        });
+    </script>
 </body>
 </html>
