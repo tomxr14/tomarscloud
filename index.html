@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset=UTF-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>TomarsCloud</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:linear-gradient(135deg,#15A34C 0%,#FFA500 50%,#FFFFFF 100%);min-height:100vh;display:flex;color:#333}
+.sidebar{width:280px;background:#fff;padding:25px;box-shadow:0 4px 15px rgba(0,0,0,0.1);border-right:4px solid #FFA500}
+.logo{font-size:24px;font-weight:bold;color:#15A34C;margin-bottom:30px}
+.nav-item{padding:12px 15px;margin:8px 0;cursor:pointer;border-radius:8px;color:#555;transition:all 0.3s}
+.nav-item:hover{background:#f5f5f5;color:#15A34C;transform:translateX(5px)}
+.nav-item.active{background:linear-gradient(135deg,#15A34C,#FFA500);color:#fff;font-weight:600}
+.storage-box{background:linear-gradient(135deg,#f0fdf4,#fffbe6);padding:15px;border-radius:10px;margin-top:30px;border-left:4px solid #15A34C}
+.storage-bar{width:100%;height:8px;background:#e5e7eb;border-radius:4px;margin:10px 0;overflow:hidden}
+.storage-fill{background:linear-gradient(90deg,#15A34C,#FFA500);height:100%;width:35%;animation:fill 1.5s ease-out}
+@keyframes fill{from{width:0}to{width:35%}}
+.main{flex:1;display:flex;flex-direction:column}
+.header{padding:30px;background:linear-gradient(135deg,#15A34C,#FFA500);color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.header h1{font-size:32px;margin-bottom:5px}
+.content{flex:1;padding:30px;overflow-y:auto;background:#fff}
+.upload{border:3px dashed #15A34C;padding:50px;text-align:center;border-radius:15px;margin-bottom:30px;cursor:pointer;transition:all 0.3s;background:linear-gradient(135deg,rgba(21,163,76,0.05),rgba(255,165,0,0.05))}
+.upload:hover{border-color:#FFA500;background:linear-gradient(135deg,rgba(21,163,76,0.1),rgba(255,165,0,0.1));transform:scale(1.02)}
+.upload h3{color:#15A34C;font-size:18px;margin-bottom:8px}
+.buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:30px 0}
+.btn{padding:12px;background:linear-gradient(135deg,#15A34C,#FFA500);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;transition:all 0.3s;box-shadow:0 4px 10px rgba(21,163,76,0.2)}
+.btn:hover{transform:translateY(-3px);box-shadow:0 6px 15px rgba(21,163,76,0.3)}
+.title{color:#15A34C;font-size:16px;font-weight:700;margin:40px 0 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:15px}
+.file{background:#f9fafb;border:1px solid #e5e7eb;padding:18px;border-radius:10px;cursor:pointer;text-align:center;transition:all 0.3s}
+.file:hover{border-color:#FFA500;transform:translateY(-8px);box-shadow:0 8px 20px rgba(21,163,76,0.25);background:#fff}
+.file-icon{font-size:40px;margin-bottom:10px}
+.file-name{font-size:12px;font-weight:600;color:#333;margin-bottom:5px}
+.file-size{font-size:11px;color:#999}
+</style>
+</head>
+<body>
+<div class=sidebar>
+<div class=logo>TomarsCloud</div>
+<div style=margin-top:20px>
+<div class=nav-item style="color:#15A34C;font-weight:600">My Files</div>
+<div class=nav-item>Shared</div>
+<div class=nav-item>Recent</div>
+<div class=nav-item>Starred</div>
+<div class=nav-item>Trash</div>
+</div>
+<div class=storage-box>
+<div style="font-size:11px;font-weight:700;color:#FFA500;text-transform:uppercase;margin-bottom:8px">Storage</div>
+<div class=storage-bar><div class=storage-fill></div></div>
+<div style="font-size:11px;color:#666">1.75 GB of 5 GB Used (35%)</div>
+<div style="font-size:11px;color:#15A34C;font-weight:600;margin-top:10px">Available: 3.25 GB</div>
+</div>
+</div>
+<div class=main>
+<div class=header>
+<h1>Welcome to TomarsCloud</h1>
+<p style=opacity:0.9>Your Irish cloud storage solution</p>
+</div>
+<div class=content>
+<div class=upload id=zone>
+<div style="font-size:48px;margin-bottom:15px;animation:bounce 2s infinite">Upload</div>
+<h3>Drag files here or click</h3>
+<p style="color:#666;margin-top:8px">Max 5GB per file</p>
+</div>
+<div class=buttons>
+<button class=btn>Link</button>
+<button class=btn>Security</button>
+<button class=btn>Share</button>
+<button class=btn>Settings</button>
+</div>
+<div class=title>Recent Files</div>
+<div class=grid>
+<div class=file onclick="alert('Opening Presentation.pdf')">
+<div class=file-icon>PDF</div>
+<div class=file-name>Presentation.pdf</div>
+<div class=file-size>2.4 MB</div>
+</div>
+<div class=file onclick="alert('Opening Photo.jpg')">
+<div class=file-icon>JPG</div>
+<div class=file-name>Photo.jpg</div>
+<div class=file-size>3.1 MB</div>
+</div>
+<div class=file onclick="alert('Opening Dataset.xlsx')">
+<div class=file-icon>XLS</div>
+<div class=file-name>Dataset.xlsx</div>
+<div class=file-size>1.2 MB</div>
+</div>
+<div class=file onclick="alert('Opening Video.mp4')">
+<div class=file-icon>MP4</div>
+<div class=file-name>Video.mp4</div>
+<div class=file-size>156 MB</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+var z=document.getElementById('zone');
+z.addEventListener('click',function(){alert('File picker ready');});
+z.addEventListener('dragover',function(e){e.preventDefault();this.style.borderColor='#FFA500';});
+z.addEventListener('dragleave',function(){this.style.borderColor='#15A34C';});
+z.addEventListener('drop',function(e){e.preventDefault();alert('Files ready to upload');});
+</script>
+<style>
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+</style>
+</body>
+</html>
