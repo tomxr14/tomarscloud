@@ -41,6 +41,14 @@ export const Dashboard = () => {
   const [shareUrl, setShareUrl] = useState('');
   const { token, logout, user } = useAuth();
 
+  // Log API configuration on mount
+  useEffect(() => {
+    console.log('✅ Dashboard loaded');
+    console.log(`📡 API Base: ${API_BASE}`);
+    console.log(`👤 User: ${user?.email || 'Not logged in'}`);
+    console.log(`🔐 Token: ${token ? 'Present' : 'Missing'}`);
+  }, []);
+
   useEffect(() => {
     loadFiles();
     loadStorageInfo();
@@ -48,6 +56,7 @@ export const Dashboard = () => {
 
   const handleDownload = async (fileId, filename) => {
     try {
+      console.log(`🔄 Downloading file: ${fileId}`);
       const response = await fetch(`${API_BASE}/file/${fileId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -61,15 +70,19 @@ export const Dashboard = () => {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        console.log(`✅ Downloaded: ${filename}`);
+      } else {
+        throw new Error(`Server error: ${response.status}`);
       }
     } catch (err) {
       console.error('Download error:', err);
-      alert('Failed to download file');
+      alert(`Failed to download file: ${err.message}`);
     }
   };
 
   const handleRestore = async (fileId) => {
     try {
+      console.log(`↩️  Restoring file: ${fileId}`);
       const response = await fetch(`${API_BASE}/file/${fileId}/restore`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${token}` }
@@ -78,10 +91,13 @@ export const Dashboard = () => {
         loadFiles();
         loadStorageInfo();
         alert('File restored from trash');
+        console.log(`✅ File restored`);
+      } else {
+        throw new Error(`Server error: ${response.status}`);
       }
     } catch (err) {
       console.error('Restore error:', err);
-      alert('Failed to restore file');
+      alert(`Failed to restore file: ${err.message}`);
     }
   };
 
@@ -89,6 +105,7 @@ export const Dashboard = () => {
     if (!window.confirm('Permanently delete this file? This cannot be undone.')) return;
     
     try {
+      console.log(`💥 Permanently deleting file: ${fileId}`);
       const response = await fetch(`${API_BASE}/file/${fileId}/permanent`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
@@ -97,15 +114,19 @@ export const Dashboard = () => {
         loadFiles();
         loadStorageInfo();
         alert('File permanently deleted');
+        console.log(`✅ File permanently deleted`);
+      } else {
+        throw new Error(`Server error: ${response.status}`);
       }
     } catch (err) {
       console.error('Delete error:', err);
-      alert('Failed to delete file');
+      alert(`Failed to delete file: ${err.message}`);
     }
   };
 
   const handleShare = async (fileId, filename) => {
     try {
+      console.log(`🔗 Creating share link for: ${filename}`);
       const response = await fetch(`${API_BASE}/file/${fileId}/share`, {
         method: 'POST',
         headers: {
@@ -115,11 +136,16 @@ export const Dashboard = () => {
         body: JSON.stringify({ access: 'download' })
       });
       const data = await response.json();
-      setShareModal({ fileId, filename });
-      setShareUrl(data.shareUrl);
+      if (response.ok && data.shareUrl) {
+        setShareModal({ fileId, filename });
+        setShareUrl(data.shareUrl);
+        console.log(`✅ Share link created`);
+      } else {
+        throw new Error(data.error || 'Failed to create share link');
+      }
     } catch (err) {
       console.error('Share error:', err);
-      alert('Failed to create share link');
+      alert(`Failed to create share link: ${err.message}`);
     }
   };
 
@@ -134,7 +160,7 @@ export const Dashboard = () => {
 
   const loadFiles = async () => {
     try {
-      const endpoint = currentFolder === 'trash' ? '/api/trash' : '/api/files';
+      const endpoint = currentFolder === 'trash' ? '/trash' : '/files';
       const response = await fetch(`${API_BASE}${endpoint}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -142,6 +168,7 @@ export const Dashboard = () => {
       setFiles(data.files || []);
     } catch (err) {
       console.error('Error loading files:', err);
+      alert(`Failed to load files: ${err.message}`);
     }
   };
 
@@ -154,23 +181,34 @@ export const Dashboard = () => {
       setStorageInfo(data);
     } catch (err) {
       console.error('Error loading storage info:', err);
+      alert(`Failed to load storage info: ${err.message}`);
     }
   };
 
   const handleFileUpload = async (uploadedFiles) => {
     setUploading(true);
+    console.log(`📤 Uploading ${uploadedFiles.length} files...`);
     for (const file of uploadedFiles) {
       const formData = new FormData();
       formData.append('file', file);
 
       try {
-        await fetch(`${API_BASE}/upload`, {
+        console.log(`  📦 Uploading: ${file.name} (${file.size} bytes)`);
+        const response = await fetch(`${API_BASE}/upload`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData
         });
+        
+        if (response.ok) {
+          console.log(`  ✅ Uploaded: ${file.name}`);
+        } else {
+          console.error(`  ❌ Upload failed: ${file.name} - ${response.status}`);
+          alert(`Failed to upload ${file.name}`);
+        }
       } catch (err) {
-        console.error('Upload error:', err);
+        console.error(`  ❌ Upload error for ${file.name}:`, err);
+        alert(`Upload error: ${err.message}`);
       }
     }
     setUploading(false);
@@ -181,14 +219,22 @@ export const Dashboard = () => {
   const handleDelete = async (fileId) => {
     if (window.confirm('Delete this file?')) {
       try {
-        await fetch(`${API_BASE}/file/${fileId}`, {
+        console.log(`🗑️  Deleting file: ${fileId}`);
+        const response = await fetch(`${API_BASE}/file/${fileId}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` }
         });
-        loadFiles();
-        loadStorageInfo();
+        if (response.ok) {
+          loadFiles();
+          loadStorageInfo();
+          console.log(`✅ File deleted`);
+          alert('File moved to trash');
+        } else {
+          throw new Error(`Server error: ${response.status}`);
+        }
       } catch (err) {
         console.error('Delete error:', err);
+        alert(`Failed to delete file: ${err.message}`);
       }
     }
   };
