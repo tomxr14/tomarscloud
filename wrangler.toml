@@ -1,0 +1,10 @@
+name = "tomarscloud"
+type = "javascript"
+main = "server.js"
+compatibility_date = "2024-02-29"
+
+[env.production]
+name = "tomarscloud"
+routes = [
+  { pattern = "tomarscloud.odd-leaf-4538.workers.dev/*", zone_name = "workers.dev" }
+]
