@@ -37,6 +37,8 @@ export const Dashboard = () => {
   const [selectedFiles, setSelectedFiles] = useState(new Set());
   const [showNavMenu, setShowNavMenu] = useState(true);
   const [currentFolder, setCurrentFolder] = useState('all');
+  const [shareModal, setShareModal] = useState(null); // { fileId, filename } or null
+  const [shareUrl, setShareUrl] = useState('');
   const { token, logout, user } = useAuth();
 
   useEffect(() => {
@@ -99,6 +101,25 @@ export const Dashboard = () => {
     } catch (err) {
       console.error('Delete error:', err);
       alert('Failed to delete file');
+    }
+  };
+
+  const handleShare = async (fileId, filename) => {
+    try {
+      const response = await fetch(`${API_BASE}/file/${fileId}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ access: 'download' })
+      });
+      const data = await response.json();
+      setShareModal({ fileId, filename });
+      setShareUrl(data.shareUrl);
+    } catch (err) {
+      console.error('Share error:', err);
+      alert('Failed to create share link');
     }
   };
 
@@ -440,8 +461,19 @@ export const Dashboard = () => {
                           handleDownload(file._id, file.filename);
                         }}
                         className="flex-1 text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 rounded transition"
+                        title="Download"
                       >
                         ⬇️
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleShare(file._id, file.filename);
+                        }}
+                        className="flex-1 text-xs bg-purple-500 hover:bg-purple-600 text-white py-1 rounded transition"
+                        title="Share"
+                      >
+                        🔗
                       </button>
                       <button
                         onClick={(e) => {
@@ -449,6 +481,7 @@ export const Dashboard = () => {
                           handleDelete(file._id);
                         }}
                         className="flex-1 text-xs bg-red-500 hover:bg-red-600 text-white py-1 rounded transition"
+                        title="Delete"
                       >
                         🗑️
                       </button>
@@ -502,6 +535,12 @@ export const Dashboard = () => {
                       ) : (
                         <>
                           <button
+                            onClick={() => handleShare(file._id, file.filename)}
+                            className="text-purple-500 hover:text-purple-700 font-semibold text-sm"
+                          >
+                            Share
+                          </button>
+                          <button
                             onClick={() => handleDownload(file._id, file.filename)}
                             className="text-blue-500 hover:text-blue-700 font-semibold text-sm"
                           >
@@ -534,6 +573,44 @@ export const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Share Modal */}
+      {shareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold text-gray-800 mb-3">Share: {shareModal.filename}</h2>
+            <p className="text-gray-600 mb-4">Anyone with this link can download the file:</p>
+            
+            <div className="bg-gray-100 rounded-lg p-4 mb-4 flex items-center gap-2 break-all">
+              <input
+                type="text"
+                value={shareUrl}
+                readOnly
+                className="flex-1 bg-transparent text-sm text-gray-800 outline-none"
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(shareUrl);
+                  alert('Link copied to clipboard!');
+                }}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded font-semibold text-sm"
+              >
+                Copy
+              </button>
+            </div>
+            
+            <button
+              onClick={() => {
+                setShareModal(null);
+                setShareUrl('');
+              }}
+              className="w-full bg-gray-300 hover:bg-gray-400 text-gray-900 px-4 py-2 rounded-lg font-semibold transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
