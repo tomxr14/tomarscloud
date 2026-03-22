@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+// ⚠️ UPDATE THIS: Replace RAILWAY_URL with your Railway backend URL from https://railway.app
+// Example: const API_BASE = 'https://tomarscloud-prod-abc123.railway.app/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://RAILWAY_URL/api';
 
 // File type icons
 const getFileIcon = (filename) => {
