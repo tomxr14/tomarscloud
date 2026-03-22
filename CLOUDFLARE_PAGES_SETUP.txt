@@ -1,0 +1,62 @@
+# CLOUDFLARE PAGES DEPLOYMENT - NEXT STEP
+
+## 🚀 Setup Instructions
+
+### Step 1: Connect GitHub to Cloudflare (60 seconds)
+
+1. **Go to:** https://dash.cloudflare.com
+2. **Left sidebar:** Pages → "Create a project"
+3. **"Connect to Git"** button
+4. **Authorize Cloudflare** with GitHub (follow prompts)
+5. **Select repo:** tomxr14/tomarscloud
+6. **Begin setup**
+
+### Step 2: Configure Build Settings
+
+**Project name:** `tomarscloud` (or your choice)
+
+**Build settings:**
+```
+Framework preset: Vite
+Build command: npm run build
+Build output directory: dist
+Root directory: (leave blank)
+```
+
+**Environment variables (IMPORTANT!):**
+```
+VITE_API_URL=https://api.tomarscloud.com/api
+```
+(We'll update this once backend tunnel is live)
+
+### Step 3: Deploy!
+
+Click **"Save and Deploy"**
+
+Cloudflare will:
+1. ✅ Download code from GitHub
+2. ✅ Run `npm run build`
+3. ✅ Deploy to global CDN
+4. ✅ Provide URL: `https://tomarscloud.pages.dev`
+
+---
+
+## 📍 Your App Will Be Live At:
+
+```
+https://tomarscloud.pages.dev
+```
+
+Accessible from **anywhere in the world** ✅
+
+---
+
+## ✅ After Deployment
+
+- Visit https://tomarscloud.pages.dev
+- You should see the **Login** page
+- Frontend is live! 🎉
+
+---
+
+**Once Pages is deploying, I'll help with Cloudflare Tunnel for the backend!**
