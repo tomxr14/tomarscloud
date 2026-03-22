@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 
-// API Base URL - Connected to Railway backend
-const API_BASE = 'https://web-production-57dae.up.railway.app/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://web-production-57dae.up.railway.app/api';
 
 // File type icons
 const getFileIcon = (filename) => {
