@@ -42,7 +42,7 @@ export const Dashboard = () => {
   useEffect(() => {
     loadFiles();
     loadStorageInfo();
-  }, []);
+  }, [currentFolder]);
 
   const handleDownload = async (fileId, filename) => {
     try {
@@ -66,6 +66,42 @@ export const Dashboard = () => {
     }
   };
 
+  const handleRestore = async (fileId) => {
+    try {
+      const response = await fetch(`${API_BASE}/file/${fileId}/restore`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        loadFiles();
+        loadStorageInfo();
+        alert('File restored from trash');
+      }
+    } catch (err) {
+      console.error('Restore error:', err);
+      alert('Failed to restore file');
+    }
+  };
+
+  const handlePermanentDelete = async (fileId) => {
+    if (!window.confirm('Permanently delete this file? This cannot be undone.')) return;
+    
+    try {
+      const response = await fetch(`${API_BASE}/file/${fileId}/permanent`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        loadFiles();
+        loadStorageInfo();
+        alert('File permanently deleted');
+      }
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Failed to delete file');
+    }
+  };
+
   const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '0 B';
     const k = 1024;
@@ -77,7 +113,8 @@ export const Dashboard = () => {
 
   const loadFiles = async () => {
     try {
-      const response = await fetch(`${API_BASE}/files`, {
+      const endpoint = currentFolder === 'trash' ? '/api/trash' : '/api/files';
+      const response = await fetch(`${API_BASE}${endpoint}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -374,24 +411,49 @@ export const Dashboard = () => {
                   {formatFileSize(file.size)}
                 </p>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDownload(file._id, file.filename);
-                    }}
-                    className="flex-1 text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 rounded transition"
-                  >
-                    ⬇️
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(file._id);
-                    }}
-                    className="flex-1 text-xs bg-red-500 hover:bg-red-600 text-white py-1 rounded transition"
-                  >
-                    🗑️
-                  </button>
+                  {currentFolder === 'trash' ? (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRestore(file._id);
+                        }}
+                        className="flex-1 text-xs bg-green-500 hover:bg-green-600 text-white py-1 rounded transition"
+                      >
+                        ↩️
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePermanentDelete(file._id);
+                        }}
+                        className="flex-1 text-xs bg-red-600 hover:bg-red-700 text-white py-1 rounded transition"
+                      >
+                        💥
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(file._id, file.filename);
+                        }}
+                        className="flex-1 text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 rounded transition"
+                      >
+                        ⬇️
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(file._id);
+                        }}
+                        className="flex-1 text-xs bg-red-500 hover:bg-red-600 text-white py-1 rounded transition"
+                      >
+                        🗑️
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}
@@ -422,18 +484,37 @@ export const Dashboard = () => {
                       {new Date(file.uploadedAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
-                      <button
-                        onClick={() => handleDownload(file._id, file.filename)}
-                        className="text-blue-500 hover:text-blue-700 font-semibold text-sm"
-                      >
-                        Download
-                      </button>
-                      <button
-                        onClick={() => handleDelete(file._id)}
-                        className="text-red-500 hover:text-red-700 font-semibold text-sm"
-                      >
-                        Delete
-                      </button>
+                      {currentFolder === 'trash' ? (
+                        <>
+                          <button
+                            onClick={() => handleRestore(file._id)}
+                            className="text-green-500 hover:text-green-700 font-semibold text-sm"
+                          >
+                            Restore
+                          </button>
+                          <button
+                            onClick={() => handlePermanentDelete(file._id)}
+                            className="text-red-600 hover:text-red-800 font-semibold text-sm"
+                          >
+                            Delete Forever
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleDownload(file._id, file.filename)}
+                            className="text-blue-500 hover:text-blue-700 font-semibold text-sm"
+                          >
+                            Download
+                          </button>
+                          <button
+                            onClick={() => handleDelete(file._id)}
+                            className="text-red-500 hover:text-red-700 font-semibold text-sm"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -42,7 +42,8 @@ const fileSchema = new mongoose.Schema({
   fileSize: Number,
   fileType: String,
   filePath: String,
-  uploadedAt: { type: Date, default: Date.now }
+  uploadedAt: { type: Date, default: Date.now },
+  deletedAt: { type: Date, default: null } // null = active, Date = deleted (soft-delete)
 });
 
 const User = mongoose.model('User', userSchema);
@@ -240,27 +241,27 @@ app.get('/api/files', verifyToken, async (req, res) => {
     let files;
     
     if (mongoConnected) {
-      // MongoDB Mode
-      files = await File.find({ userId: req.userId }).sort({ uploadedAt: -1 });
+      // MongoDB Mode - Exclude deleted files
+      files = await File.find({ userId: req.userId, deletedAt: null }).sort({ uploadedAt: -1 });
       res.json({
         files: files.map(f => ({
-          id: f._id,
-          name: f.originalName,
+          _id: f._id,
+          filename: f.originalName,
           size: f.fileSize,
           type: f.fileType,
           uploadedAt: f.uploadedAt
         }))
       });
     } else {
-      // IN-MEMORY Mode
+      // IN-MEMORY Mode - Exclude deleted files
       files = Object.values(memoryDB.files)
-        .filter(f => f.userId === req.userId)
+        .filter(f => f.userId === req.userId && !f.deletedAt)
         .sort((a, b) => b.uploadedAt - a.uploadedAt);
       
       res.json({
         files: files.map(f => ({
-          id: f.id,
-          name: f.originalName,
+          _id: f.id,
+          filename: f.originalName,
           size: f.fileSize,
           type: f.fileType,
           uploadedAt: f.uploadedAt
@@ -300,7 +301,7 @@ app.get('/api/file/:id', verifyToken, async (req, res) => {
   }
 });
 
-// DELETE FILE
+// DELETE FILE (Soft Delete - Move to Trash)
 app.delete('/api/file/:id', verifyToken, async (req, res) => {
   try {
     let file;
@@ -322,17 +323,15 @@ app.delete('/api/file/:id', verifyToken, async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
     
-    if (fs.existsSync(file.filePath)) {
-      fs.unlinkSync(file.filePath);
-    }
-    
+    // SOFT DELETE: Mark as deleted instead of removing
     if (mongoConnected) {
-      await File.findByIdAndDelete(req.params.id);
+      await File.findByIdAndUpdate(req.params.id, { deletedAt: new Date() });
     } else {
-      delete memoryDB.files[req.params.id];
+      file.deletedAt = new Date();
+      memoryDB.files[req.params.id] = file;
     }
     
-    res.json({ message: 'File deleted successfully' });
+    res.json({ message: 'File moved to trash' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -360,6 +359,117 @@ app.get('/api/storage-info', verifyToken, async (req, res) => {
       availableStorage: totalQuota - totalSize,
       fileCount: files.length
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET TRASH - List all deleted files
+app.get('/api/trash', verifyToken, async (req, res) => {
+  try {
+    let files;
+    
+    if (mongoConnected) {
+      // MongoDB Mode - Only get deleted files
+      files = await File.find({ userId: req.userId, deletedAt: { $ne: null } }).sort({ deletedAt: -1 });
+      res.json({
+        files: files.map(f => ({
+          _id: f._id,
+          filename: f.originalName,
+          size: f.fileSize,
+          type: f.fileType,
+          deletedAt: f.deletedAt,
+          uploadedAt: f.uploadedAt
+        }))
+      });
+    } else {
+      // IN-MEMORY Mode - Only get deleted files
+      files = Object.values(memoryDB.files)
+        .filter(f => f.userId === req.userId && f.deletedAt)
+        .sort((a, b) => b.deletedAt - a.deletedAt);
+      
+      res.json({
+        files: files.map(f => ({
+          _id: f.id,
+          filename: f.originalName,
+          size: f.fileSize,
+          type: f.fileType,
+          deletedAt: f.deletedAt,
+          uploadedAt: f.uploadedAt
+        }))
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// RESTORE FILE from Trash
+app.put('/api/file/:id/restore', verifyToken, async (req, res) => {
+  try {
+    let file;
+    
+    if (mongoConnected) {
+      file = await File.findById(req.params.id);
+    } else {
+      file = memoryDB.files[req.params.id];
+    }
+    
+    if (!file) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    const userId = mongoConnected ? file.userId.toString() : file.userId;
+    if (userId !== req.userId) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    
+    if (mongoConnected) {
+      await File.findByIdAndUpdate(req.params.id, { deletedAt: null });
+    } else {
+      file.deletedAt = null;
+      memoryDB.files[req.params.id] = file;
+    }
+    
+    res.json({ message: 'File restored from trash' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PERMANENTLY DELETE FILE
+app.delete('/api/file/:id/permanent', verifyToken, async (req, res) => {
+  try {
+    let file;
+    
+    if (mongoConnected) {
+      file = await File.findById(req.params.id);
+    } else {
+      file = memoryDB.files[req.params.id];
+    }
+    
+    if (!file) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    
+    const userId = mongoConnected ? file.userId.toString() : file.userId;
+    if (userId !== req.userId) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    
+    // Delete physical file
+    if (fs.existsSync(file.filePath)) {
+      fs.unlinkSync(file.filePath);
+    }
+    
+    // Delete from database
+    if (mongoConnected) {
+      await File.findByIdAndDelete(req.params.id);
+    } else {
+      delete memoryDB.files[req.params.id];
+    }
+    
+    res.json({ message: 'File permanently deleted' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
