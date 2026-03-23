@@ -182,20 +182,31 @@ app.post('/api/register', async (req, res) => {
 // LOGIN
 app.post('/api/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, username, password } = req.body;
     
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
+    // Allow login with either email or username
+    if ((!email && !username) || !password) {
+      return res.status(400).json({ error: 'Username/Email and password required' });
     }
     
     let user;
     
     if (mongoConnected) {
-      // MongoDB Mode
-      user = await User.findOne({ email });
+      // MongoDB Mode - search by email or username
+      user = await User.findOne({
+        $or: [
+          { email: email },
+          { username: username }
+        ]
+      });
     } else {
-      // IN-MEMORY Mode
-      user = memoryDB.users[email];
+      // IN-MEMORY Mode - search by email or username
+      if (email) {
+        user = memoryDB.users[email];
+      } else if (username) {
+        // Search by username in memory
+        user = Object.values(memoryDB.users).find(u => u.username === username);
+      }
     }
     
     if (!user) {
@@ -208,9 +219,10 @@ app.post('/api/login', async (req, res) => {
     }
     
     const userId = mongoConnected ? user._id.toString() : user.id;
-    const username = user.username || generateUsername(email);
+    const userEmail = mongoConnected ? user.email : user.email;
+    const userUsername = user.username || generateUsername(userEmail);
     const token = jwt.sign(
-      { userId, email, username },
+      { userId, email: userEmail, username: userUsername },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -218,7 +230,7 @@ app.post('/api/login', async (req, res) => {
     res.json({ 
       message: 'Login successful',
       token,
-      user: { id: userId, email, username }
+      user: { id: userId, email: userEmail, username: userUsername }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

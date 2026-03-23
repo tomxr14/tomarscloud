@@ -24,7 +24,7 @@ export const Login = ({ onLoginSuccess }) => {
       
       const body = isRegister 
         ? { email, password, username }
-        : { email, password };
+        : { username, password }; // Login with username/email, not separate email field
 
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
@@ -88,6 +88,20 @@ export const Login = ({ onLoginSuccess }) => {
             </div>
           )}
 
+          {!isRegister && (
+            <div className="mb-4">
+              <label className="block text-gray-700 font-semibold mb-2">Username or Email</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                placeholder="Your name or email"
+                required={!isRegister}
+              />
+            </div>
+          )}
+
           <div className="mb-4">
             <label className="block text-gray-700 font-semibold mb-2">Email</label>
             <input
@@ -96,7 +110,7 @@ export const Login = ({ onLoginSuccess }) => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
               placeholder="your@email.com"
-              required
+              required={isRegister}
             />
           </div>
 
