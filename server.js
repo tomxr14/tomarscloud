@@ -34,6 +34,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   username: { type: String, unique: true },
   password: { type: String, required: true },
+  isAdmin: { type: Boolean, default: false }, // NEW: Admin flag
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -91,6 +92,25 @@ const verifyToken = (req, res, next) => {
     next();
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+// Admin Verification Middleware
+const verifyAdmin = async (req, res, next) => {
+  try {
+    let user;
+    if (mongoConnected) {
+      user = await User.findById(req.userId);
+    } else {
+      user = Object.values(memoryDB.users).find(u => u.id === req.userId);
+    }
+    
+    if (!user || !user.isAdmin) {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    next();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -401,14 +421,18 @@ app.delete('/api/file/:id', verifyToken, async (req, res) => {
 // STORAGE INFO
 app.get('/api/storage-info', verifyToken, async (req, res) => {
   try {
-    let files;
+    let files, isAdmin;
     
     if (mongoConnected) {
       // MongoDB Mode
       files = await File.find({ userId: req.userId });
+      const user = await User.findById(req.userId);
+      isAdmin = user?.isAdmin || false;
     } else {
       // IN-MEMORY Mode
       files = Object.values(memoryDB.files).filter(f => f.userId === req.userId);
+      const user = Object.values(memoryDB.users).find(u => u.id === req.userId);
+      isAdmin = user?.isAdmin || false;
     }
     
     const totalSize = files.reduce((sum, f) => sum + f.fileSize, 0);
@@ -417,6 +441,7 @@ app.get('/api/storage-info', verifyToken, async (req, res) => {
     res.json({
       username: req.username,
       email: req.email,
+      isAdmin,
       usedStorage: totalSize,
       totalStorage: totalQuota,
       availableStorage: totalQuota - totalSize,
@@ -752,6 +777,269 @@ app.delete('/api/file/:id/share/:shareId', verifyToken, async (req, res) => {
     }
     
     res.json({ message: 'Share revoked' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ===== ADMIN ENDPOINTS =====
+
+// GET ALL USERS (Admin only)
+app.get('/api/admin/users', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    let users;
+    
+    if (mongoConnected) {
+      users = await User.find({}, { password: 0 });
+      users = users.map(u => ({
+        id: u._id.toString(),
+        email: u.email,
+        username: u.username,
+        isAdmin: u.isAdmin,
+        createdAt: u.createdAt
+      }));
+    } else {
+      users = Object.values(memoryDB.users).map(u => ({
+        id: u.id,
+        email: u.email,
+        username: u.username,
+        isAdmin: u.isAdmin,
+        createdAt: u.createdAt
+      }));
+    }
+    
+    res.json({ users, totalUsers: users.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET USER DETAILS (Admin only)
+app.get('/api/admin/users/:userId', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    let user, files, fileCount, storageUsed;
+    
+    if (mongoConnected) {
+      user = await User.findById(req.params.userId, { password: 0 });
+      files = await File.find({ userId: req.params.userId, deletedAt: null });
+    } else {
+      user = Object.values(memoryDB.users).find(u => u.id === req.params.userId);
+      files = Object.values(memoryDB.files).filter(f => f.userId === req.params.userId && !f.deletedAt);
+    }
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    storageUsed = files.reduce((sum, f) => sum + (f.fileSize || 0), 0);
+    
+    res.json({
+      user: {
+        id: mongoConnected ? user._id.toString() : user.id,
+        email: user.email,
+        username: user.username,
+        isAdmin: user.isAdmin,
+        createdAt: user.createdAt
+      },
+      fileCount: files.length,
+      storageUsed: storageUsed,
+      files: files.map(f => ({
+        id: mongoConnected ? f._id.toString() : f.id,
+        name: f.originalName,
+        size: f.fileSize,
+        uploadedAt: f.uploadedAt
+      }))
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE USER (Admin only)
+app.delete('/api/admin/users/:userId', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    if (mongoConnected) {
+      // Find and delete all user files
+      const files = await File.find({ userId: req.params.userId });
+      for (let file of files) {
+        if (fs.existsSync(file.filePath)) {
+          fs.unlinkSync(file.filePath);
+        }
+      }
+      await File.deleteMany({ userId: req.params.userId });
+      
+      // Delete user
+      await User.findByIdAndDelete(req.params.userId);
+    } else {
+      // Memory mode
+      const userEmail = Object.keys(memoryDB.users).find(email => memoryDB.users[email].id === req.params.userId);
+      if (userEmail) {
+        // Delete user files
+        Object.keys(memoryDB.files).forEach(fileId => {
+          if (memoryDB.files[fileId].userId === req.params.userId && fs.existsSync(memoryDB.files[fileId].filePath)) {
+            fs.unlinkSync(memoryDB.files[fileId].filePath);
+            delete memoryDB.files[fileId];
+          }
+        });
+        delete memoryDB.users[userEmail];
+      }
+    }
+    
+    res.json({ message: 'User and associated files deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET ALL FILES (Admin only)
+app.get('/api/admin/files', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    let files;
+    
+    if (mongoConnected) {
+      files = await File.find({ deletedAt: null }).populate('userId', 'username email');
+      files = files.map(f => ({
+        id: f._id.toString(),
+        userId: mongoConnected ? f.userId._id.toString() : f.userId,
+        username: f.userId.username,
+        email: f.userId.email,
+        name: f.originalName,
+        size: f.fileSize,
+        uploadedAt: f.uploadedAt
+      }));
+    } else {
+      files = Object.values(memoryDB.files)
+        .filter(f => !f.deletedAt)
+        .map(f => {
+          const user = Object.values(memoryDB.users).find(u => u.id === f.userId);
+          return {
+            id: f.id,
+            userId: f.userId,
+            username: user?.username || 'Unknown',
+            email: user?.email || 'Unknown',
+            name: f.originalName,
+            size: f.fileSize,
+            uploadedAt: f.uploadedAt
+          };
+        });
+    }
+    
+    res.json({ files, totalFiles: files.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE FILE (Admin only)
+app.delete('/api/admin/files/:fileId', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    let file;
+    
+    if (mongoConnected) {
+      file = await File.findById(req.params.fileId);
+      if (!file) {
+        return res.status(404).json({ error: 'File not found' });
+      }
+      
+      if (fs.existsSync(file.filePath)) {
+        fs.unlinkSync(file.filePath);
+      }
+      
+      await File.findByIdAndDelete(req.params.fileId);
+    } else {
+      file = memoryDB.files[req.params.fileId];
+      if (!file) {
+        return res.status(404).json({ error: 'File not found' });
+      }
+      
+      if (fs.existsSync(file.filePath)) {
+        fs.unlinkSync(file.filePath);
+      }
+      
+      delete memoryDB.files[req.params.fileId];
+    }
+    
+    res.json({ message: 'File deleted by admin' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET SYSTEM STATS (Admin only)
+app.get('/api/admin/stats', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    let totalUsers, totalFiles, totalStorage;
+    
+    if (mongoConnected) {
+      totalUsers = await User.countDocuments();
+      const files = await File.find({ deletedAt: null });
+      totalFiles = files.length;
+      totalStorage = files.reduce((sum, f) => sum + (f.fileSize || 0), 0);
+      
+      const adminCount = await User.countDocuments({ isAdmin: true });
+      const adminUsers = await User.find({ isAdmin: true }, { email: 1, username: 1 });
+      
+      res.json({
+        totalUsers,
+        totalAdmin: adminCount,
+        adminUsers: adminUsers.map(u => ({ email: u.email, username: u.username })),
+        totalFiles,
+        totalStorage: totalStorage,
+        storageInGB: (totalStorage / (1024 ** 3)).toFixed(2)
+      });
+    } else {
+      totalUsers = Object.values(memoryDB.users).length;
+      const files = Object.values(memoryDB.files).filter(f => !f.deletedAt);
+      totalFiles = files.length;
+      totalStorage = files.reduce((sum, f) => sum + (f.fileSize || 0), 0);
+      
+      const adminUsers = Object.values(memoryDB.users).filter(u => u.isAdmin);
+      
+      res.json({
+        totalUsers,
+        totalAdmin: adminUsers.length,
+        adminUsers: adminUsers.map(u => ({ email: u.email, username: u.username })),
+        totalFiles,
+        totalStorage: totalStorage,
+        storageInGB: (totalStorage / (1024 ** 3)).toFixed(2)
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// MAKE USER ADMIN (Admin only)
+app.post('/api/admin/make-admin/:userId', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    if (mongoConnected) {
+      await User.findByIdAndUpdate(req.params.userId, { isAdmin: true });
+    } else {
+      const user = Object.values(memoryDB.users).find(u => u.id === req.params.userId);
+      if (user) {
+        user.isAdmin = true;
+      }
+    }
+    
+    res.json({ message: 'User is now an admin' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// REMOVE ADMIN ROLE (Admin only)
+app.post('/api/admin/remove-admin/:userId', verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    if (mongoConnected) {
+      await User.findByIdAndUpdate(req.params.userId, { isAdmin: false });
+    } else {
+      const user = Object.values(memoryDB.users).find(u => u.id === req.params.userId);
+      if (user) {
+        user.isAdmin = false;
+      }
+    }
+    
+    res.json({ message: 'Admin role removed' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -35,10 +35,11 @@ const formatDate = (date) => {
   });
 };
 
-export const Dashboard = () => {
+export const Dashboard = ({ showAdminDashboard }) => {
   const [files, setFiles] = useState([]);
   const [folders, setFolders] = useState([]);
   const [storageInfo, setStorageInfo] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [currentFolder, setCurrentFolder] = useState('');
   const [breadcrumb, setBreadcrumb] = useState(['Drive']);
@@ -81,6 +82,7 @@ export const Dashboard = () => {
       });
       const data = await response.json();
       setStorageInfo(data);
+      setIsAdmin(data.isAdmin || false);
       console.log('✅ Storage info loaded:', data);
     } catch (err) {
       console.error('❌ Error loading storage info:', err);
@@ -409,7 +411,15 @@ export const Dashboard = () => {
         </nav>
 
         {/* Logout */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-gray-200 space-y-2">
+          {isAdmin && (
+            <button 
+              onClick={showAdminDashboard}
+              className="w-full bg-purple-500 text-white hover:bg-purple-600 py-2 px-4 rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+            >
+              👑 Admin Panel
+            </button>
+          )}
           <button 
             onClick={logout}
             className="w-full text-gray-700 hover:bg-gray-100 py-2 px-4 rounded-lg text-sm font-medium"
