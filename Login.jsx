@@ -75,7 +75,7 @@ export const Login = ({ onLoginSuccess }) => {
         <form onSubmit={handleSubmit}>
           {isRegister && (
             <div className="mb-4">
-              <label className="block text-gray-700 font-semibold mb-2">Full Name / Username</label>
+              <label className="block text-gray-700 font-semibold mb-2">Full Name</label>
               <input
                 type="text"
                 value={username}
@@ -103,7 +103,7 @@ export const Login = ({ onLoginSuccess }) => {
           )}
 
           <div className="mb-4">
-            <label className="block text-gray-700 font-semibold mb-2">Email</label>
+            <label className="block text-gray-700 font-semibold mb-2">Email Address</label>
             <input
               type="email"
               value={email}
@@ -112,6 +112,7 @@ export const Login = ({ onLoginSuccess }) => {
               placeholder="your@email.com"
               required={isRegister}
             />
+            {isRegister && <p className="text-sm text-gray-500 mt-1">We'll use this to verify your account</p>}
           </div>
 
           <div className="mb-6">
@@ -124,6 +125,7 @@ export const Login = ({ onLoginSuccess }) => {
               placeholder="••••••••"
               required
             />
+            {isRegister && <p className="text-sm text-gray-500 mt-1">At least 8 characters recommended</p>}
           </div>
 
           {error && (
