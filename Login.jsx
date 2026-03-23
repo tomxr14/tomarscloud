@@ -18,6 +18,9 @@ export const Login = ({ onLoginSuccess }) => {
 
     try {
       const endpoint = isRegister ? '/register' : '/login';
+      console.log(`📝 Attempting ${isRegister ? 'registration' : 'login'}...`);
+      console.log(`📍 Endpoint: ${API_BASE}${endpoint}`);
+      
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -25,15 +28,31 @@ export const Login = ({ onLoginSuccess }) => {
       });
 
       const data = await response.json();
+      
+      console.log(`📦 Response status: ${response.status}`);
+      console.log(`📦 Response data keys:`, Object.keys(data));
+      console.log(`📦 Token present:`, !!data.token);
+      console.log(`📦 User present:`, !!data.user);
 
       if (!response.ok) {
+        console.error(`❌ Auth failed:`, data);
         setError(data.error || 'Authentication failed');
         return;
       }
 
+      if (!data.token) {
+        console.error(`❌ No token in response:`, data);
+        setError('Authentication failed: No token received');
+        return;
+      }
+
+      console.log(`✅ Authentication successful!`);
+      console.log(`✅ Logging in user:`, data.user?.email);
+      
       login(data.user, data.token);
       onLoginSuccess();
     } catch (err) {
+      console.error(`❌ Error:`, err);
       setError(err.message);
     } finally {
       setIsLoading(false);

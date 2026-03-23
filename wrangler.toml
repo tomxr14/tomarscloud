@@ -1,10 +1,14 @@
 name = "tomarscloud"
-type = "javascript"
-main = "server.js"
+main = "src/index.js"
 compatibility_date = "2024-02-29"
+workers_dev = true
 
-[env.production]
-name = "tomarscloud"
-routes = [
-  { pattern = "tomarscloud.odd-leaf-4538.workers.dev/*", zone_name = "workers.dev" }
-]
+[build]
+command = "npm run build"
+cwd = "."
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+exclude = ["_redirects"]
+

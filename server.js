@@ -32,6 +32,7 @@ const memoryDB = {
 // ===== MONGODB MODE =====
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
+  username: { type: String, unique: true },
   password: { type: String, required: true },
   createdAt: { type: Date, default: Date.now }
 });
@@ -85,6 +86,8 @@ const verifyToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = decoded.userId;
+    req.username = decoded.username;
+    req.email = decoded.email;
     next();
   } catch (err) {
     res.status(401).json({ error: 'Invalid token' });
@@ -98,6 +101,11 @@ const generateShareToken = () => {
 
 // ===== API ENDPOINTS =====
 
+// Helper function to generate username from email
+const generateUsername = (email) => {
+  return email.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '');
+};
+
 // REGISTER
 app.post('/api/register', async (req, res) => {
   try {
@@ -107,6 +115,7 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Email and password required' });
     }
     
+    const username = generateUsername(email);
     let user;
     let userId;
 
@@ -118,7 +127,7 @@ app.post('/api/register', async (req, res) => {
       }
       
       const hashedPassword = await bcrypt.hash(password, 10);
-      user = new User({ email, password: hashedPassword });
+      user = new User({ email, password: hashedPassword, username });
       await user.save();
       userId = user._id.toString();
     } else {
@@ -132,6 +141,7 @@ app.post('/api/register', async (req, res) => {
       memoryDB.users[email] = {
         id: userId,
         email,
+        username,
         password: hashedPassword,
         createdAt: new Date()
       };
@@ -139,7 +149,7 @@ app.post('/api/register', async (req, res) => {
     
     // Generate JWT token immediately after registration
     const token = jwt.sign(
-      { userId, email },
+      { userId, email, username },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -147,7 +157,7 @@ app.post('/api/register', async (req, res) => {
     res.json({
       message: 'User registered successfully',
       token,
-      user: { id: userId, email }
+      user: { id: userId, email, username }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -183,8 +193,9 @@ app.post('/api/login', async (req, res) => {
     }
     
     const userId = mongoConnected ? user._id.toString() : user.id;
+    const username = user.username || generateUsername(email);
     const token = jwt.sign(
-      { userId, email },
+      { userId, email, username },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -192,7 +203,7 @@ app.post('/api/login', async (req, res) => {
     res.json({ 
       message: 'Login successful',
       token,
-      user: { id: userId, email }
+      user: { id: userId, email, username }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -377,6 +388,8 @@ app.get('/api/storage-info', verifyToken, async (req, res) => {
     const totalQuota = 19 * 1024 * 1024 * 1024;
     
     res.json({
+      username: req.username,
+      email: req.email,
       usedStorage: totalSize,
       totalStorage: totalQuota,
       availableStorage: totalQuota - totalSize,
