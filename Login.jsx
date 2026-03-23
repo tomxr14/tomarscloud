@@ -6,6 +6,7 @@ const API_BASE = process.env.REACT_APP_API_URL || 'https://web-production-57dae.
 export const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
@@ -21,10 +22,14 @@ export const Login = ({ onLoginSuccess }) => {
       console.log(`📝 Attempting ${isRegister ? 'registration' : 'login'}...`);
       console.log(`📍 Endpoint: ${API_BASE}${endpoint}`);
       
+      const body = isRegister 
+        ? { email, password, username }
+        : { email, password };
+
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(body)
       });
 
       const data = await response.json();
@@ -68,6 +73,21 @@ export const Login = ({ onLoginSuccess }) => {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {isRegister && (
+            <div className="mb-4">
+              <label className="block text-gray-700 font-semibold mb-2">Full Name / Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                placeholder="Anurag Tomar"
+                required={isRegister}
+              />
+              <p className="text-sm text-gray-500 mt-1">This will be displayed as 'Anurag's Cloud'</p>
+            </div>
+          )}
+
           <div className="mb-4">
             <label className="block text-gray-700 font-semibold mb-2">Email</label>
             <input
@@ -108,7 +128,13 @@ export const Login = ({ onLoginSuccess }) => {
 
           <button
             type="button"
-            onClick={() => setIsRegister(!isRegister)}
+            onClick={() => {
+              setIsRegister(!isRegister);
+              setEmail('');
+              setPassword('');
+              setUsername('');
+              setError('');
+            }}
             className="w-full mt-4 text-blue-600 hover:underline"
           >
             {isRegister ? 'Already have an account?' : 'Create new account'}

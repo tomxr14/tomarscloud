@@ -45,7 +45,27 @@ export const Dashboard = () => {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [dragOver, setDragOver] = useState(false);
+  const [currentView, setCurrentView] = useState('drive'); // 'drive', 'starred', 'recent', 'trash'
+  const [showNewMenu, setShowNewMenu] = useState(false);
   const { token, logout, user } = useAuth();
+
+  // Get user's initials (e.g., "Anurag Tomar" → "AT")
+  const getInitials = (username) => {
+    if (!username) return 'U';
+    return username
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Get user's cloud name display (e.g., "Anurag's Cloud")
+  const getCloudName = (username) => {
+    if (!username) return 'My Cloud';
+    const firstName = username.split(' ')[0];
+    return `${firstName}'s Cloud`;
+  };
 
   // Load storage info and files on mount
   useEffect(() => {
@@ -287,10 +307,10 @@ export const Dashboard = () => {
         {/* User Section */}
         <div className="p-4 border-b border-gray-200">
           <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center text-blue-700 font-bold text-lg mb-3">
-            {storageInfo?.username?.[0]?.toUpperCase() || 'U'}
+            {getInitials(storageInfo?.username || user?.username || 'User')}
           </div>
-          <h2 className="font-semibold text-gray-900">{storageInfo?.username || 'User'}</h2>
-          <p className="text-xs text-gray-500">{storageInfo?.email || user?.email}</p>
+          <h2 className="font-semibold text-gray-900">{getCloudName(storageInfo?.username || user?.username || 'User')}</h2>
+          <p className="text-xs text-gray-500">{storageInfo?.username || user?.username || 'User'}</p>
         </div>
 
         {/* Storage Progress */}
@@ -312,23 +332,79 @@ export const Dashboard = () => {
 
         {/* Navigation */}
         <nav className="flex-1 p-4">
-          <button className="w-full bg-blue-500 text-white rounded-lg py-2 px-4 mb-4 hover:bg-blue-600 flex items-center justify-center gap-2">
-            <span>+</span> New
-          </button>
+          <div className="relative mb-4">
+            <button 
+              onClick={() => setShowNewMenu(!showNewMenu)}
+              className="w-full bg-blue-500 text-white rounded-lg py-2 px-4 hover:bg-blue-600 flex items-center justify-center gap-2"
+            >
+              <span>+</span> New
+            </button>
+            {showNewMenu && (
+              <div className="absolute top-12 left-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                <button 
+                  onClick={() => {
+                    setShowNewFolderDialog(true);
+                    setShowNewMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                >
+                  <span>📁</span> New folder
+                </button>
+                <label className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700 cursor-pointer">
+                  <span>📤</span> Upload file
+                  <input 
+                    type="file" 
+                    hidden 
+                    onChange={(e) => {
+                      handleFileUpload(e);
+                      setShowNewMenu(false);
+                    }}
+                    disabled={uploading}
+                  />
+                </label>
+                <label className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center gap-2 text-gray-700 cursor-pointer">
+                  <span>📂</span> Upload folder
+                  <input 
+                    type="file" 
+                    hidden 
+                    webkitdirectory="true"
+                    directory="true"
+                    onChange={(e) => {
+                      handleFolderUpload(e);
+                      setShowNewMenu(false);
+                    }}
+                    disabled={uploading}
+                  />
+                </label>
+              </div>
+            )}
+          </div>
           <div className="space-y-1">
             <p className="text-xs font-semibold text-gray-700 px-4 py-2 uppercase">Menu</p>
-            <a href="#" className="flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+            <button 
+              onClick={() => setCurrentView('drive')}
+              className={`w-full text-left flex items-center gap-3 px-4 py-2 rounded-lg ${currentView === 'drive' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}
+            >
               <span>📁</span> My Drive
-            </a>
-            <a href="#" className="flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+            </button>
+            <button 
+              onClick={() => setCurrentView('starred')}
+              className={`w-full text-left flex items-center gap-3 px-4 py-2 rounded-lg ${currentView === 'starred' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}
+            >
               <span>⭐</span> Starred
-            </a>
-            <a href="#" className="flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+            </button>
+            <button 
+              onClick={() => setCurrentView('recent')}
+              className={`w-full text-left flex items-center gap-3 px-4 py-2 rounded-lg ${currentView === 'recent' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}
+            >
               <span>🕐</span> Recent
-            </a>
-            <a href="#" className="flex items-center gap-3 px-4 py-2 text-gray-700 rounded-lg hover:bg-gray-100">
+            </button>
+            <button 
+              onClick={() => setCurrentView('trash')}
+              className={`w-full text-left flex items-center gap-3 px-4 py-2 rounded-lg ${currentView === 'trash' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-700 hover:bg-gray-100'}`}
+            >
               <span>🗑️</span> Trash
-            </a>
+            </button>
           </div>
         </nav>
 
@@ -348,56 +424,35 @@ export const Dashboard = () => {
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-4">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-semibold text-gray-900">My Drive</h1>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setShowNewFolderDialog(true)}
-                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-              >
-                <span>📁</span> New folder
-              </button>
-              <label className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 cursor-pointer flex items-center gap-2">
-                <span>📤</span> Upload file
-                <input 
-                  type="file" 
-                  hidden 
-                  onChange={handleFileUpload}
-                  disabled={uploading}
-                />
-              </label>
-              <label className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 cursor-pointer flex items-center gap-2">
-                <span>📂</span> Upload folder
-                <input 
-                  type="file" 
-                  hidden 
-                  webkitdirectory="true"
-                  directory="true"
-                  onChange={handleFolderUpload}
-                  disabled={uploading}
-                />
-              </label>
-            </div>
+            <h1 className="text-2xl font-semibold text-gray-900">
+              {currentView === 'drive' && 'My Drive'}
+              {currentView === 'starred' && 'Starred'}
+              {currentView === 'recent' && 'Recent'}
+              {currentView === 'trash' && 'Trash'}
+            </h1>
           </div>
 
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            {breadcrumb.map((crumb, idx) => (
-              <React.Fragment key={idx}>
-                {idx > 0 && <span>/</span>}
-                <button className="hover:text-blue-600">{crumb}</button>
-              </React.Fragment>
-            ))}
-          </div>
+          {/* Breadcrumb - only show for My Drive view */}
+          {currentView === 'drive' && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              {breadcrumb.map((crumb, idx) => (
+                <React.Fragment key={idx}>
+                  {idx > 0 && <span>/</span>}
+                  <button className="hover:text-blue-600">{crumb}</button>
+                </React.Fragment>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* File List - Drag and Drop Area */}
         <div 
-          className={`flex-1 overflow-auto p-8 ${dragOver ? 'bg-blue-50' : 'bg-gray-50'}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
+          className={`flex-1 overflow-auto p-8 ${dragOver && currentView === 'drive' ? 'bg-blue-50' : 'bg-gray-50'}`}
+          onDragOver={currentView === 'drive' ? handleDragOver : null}
+          onDragLeave={currentView === 'drive' ? handleDragLeave : null}
+          onDrop={currentView === 'drive' ? handleDrop : null}
         >
-          {dragOver && (
+          {dragOver && currentView === 'drive' && (
             <div className="fixed inset-0 bg-blue-500 bg-opacity-10 border-2 border-dashed border-blue-500 flex items-center justify-center pointer-events-none">
               <div className="text-center">
                 <p className="text-xl font-semibold text-blue-600">Drop files here to upload</p>
@@ -413,58 +468,139 @@ export const Dashboard = () => {
             </div>
           )}
 
-          {files.length === 0 && !uploading && (
+          {/* MY DRIVE VIEW */}
+          {currentView === 'drive' && (
+            <>
+              {files.length === 0 && !uploading && (
+                <div className="text-center py-12">
+                  <p className="text-4xl mb-4">📁</p>
+                  <p className="text-gray-500">No files yet</p>
+                  <p className="text-sm text-gray-400 mt-2">Drag files here or use the + New button</p>
+                </div>
+              )}
+
+              {files.length > 0 && (
+                <div className="bg-white rounded-lg shadow-sm">
+                  <table className="w-full">
+                    <thead className="border-b border-gray-200">
+                      <tr className="text-left text-sm font-semibold text-gray-700">
+                        <th className="px-6 py-3">Name</th>
+                        <th className="px-6 py-3">Size</th>
+                        <th className="px-6 py-3">Modified</th>
+                        <th className="px-6 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {files.map((file) => (
+                        <tr key={file._id || file.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="px-6 py-3 flex items-center gap-3">
+                            <span className="text-xl">{getFileIcon(file.originalName || file.fileName)}</span>
+                            <span className="text-gray-900">{file.originalName || file.fileName}</span>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-600">
+                            {formatBytes(file.fileSize)}
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-600">
+                            {formatDate(file.uploadedAt)}
+                          </td>
+                          <td className="px-6 py-3 flex gap-2">
+                            <button 
+                              onClick={() => handleDownload(file._id || file.id, file.originalName || file.fileName)}
+                              className="text-gray-600 hover:text-blue-600 text-sm"
+                              title="Download"
+                            >
+                              ⬇️
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(file._id || file.id)}
+                              className="text-gray-600 hover:text-red-600 text-sm"
+                              title="Delete"
+                            >
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* STARRED VIEW */}
+          {currentView === 'starred' && (
             <div className="text-center py-12">
-              <p className="text-4xl mb-4">📁</p>
-              <p className="text-gray-500">No files yet</p>
-              <p className="text-sm text-gray-400 mt-2">Drag files here or use the upload button</p>
+              <p className="text-4xl mb-4">⭐</p>
+              <p className="text-gray-500">No starred files yet</p>
+              <p className="text-sm text-gray-400 mt-2">Star files to access them here</p>
             </div>
           )}
 
-          {files.length > 0 && (
-            <div className="bg-white rounded-lg shadow-sm">
-              <table className="w-full">
-                <thead className="border-b border-gray-200">
-                  <tr className="text-left text-sm font-semibold text-gray-700">
-                    <th className="px-6 py-3">Name</th>
-                    <th className="px-6 py-3">Size</th>
-                    <th className="px-6 py-3">Modified</th>
-                    <th className="px-6 py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {files.map((file) => (
-                    <tr key={file._id || file.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="px-6 py-3 flex items-center gap-3">
-                        <span className="text-xl">{getFileIcon(file.originalName || file.fileName)}</span>
-                        <span className="text-gray-900">{file.originalName || file.fileName}</span>
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-600">
-                        {formatBytes(file.fileSize)}
-                      </td>
-                      <td className="px-6 py-3 text-sm text-gray-600">
-                        {formatDate(file.uploadedAt)}
-                      </td>
-                      <td className="px-6 py-3 flex gap-2">
-                        <button 
-                          onClick={() => handleDownload(file._id || file.id, file.originalName || file.fileName)}
-                          className="text-gray-600 hover:text-blue-600 text-sm"
-                          title="Download"
-                        >
-                          ⬇️
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(file._id || file.id)}
-                          className="text-gray-600 hover:text-red-600 text-sm"
-                          title="Delete"
-                        >
-                          🗑️
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* RECENT VIEW */}
+          {currentView === 'recent' && (
+            <>
+              {files.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-4xl mb-4">🕐</p>
+                  <p className="text-gray-500">No recent files</p>
+                  <p className="text-sm text-gray-400 mt-2">Recently accessed files will appear here</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm">
+                  <table className="w-full">
+                    <thead className="border-b border-gray-200">
+                      <tr className="text-left text-sm font-semibold text-gray-700">
+                        <th className="px-6 py-3">Name</th>
+                        <th className="px-6 py-3">Size</th>
+                        <th className="px-6 py-3">Modified</th>
+                        <th className="px-6 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {files.slice(0, 10).map((file) => (
+                        <tr key={file._id || file.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="px-6 py-3 flex items-center gap-3">
+                            <span className="text-xl">{getFileIcon(file.originalName || file.fileName)}</span>
+                            <span className="text-gray-900">{file.originalName || file.fileName}</span>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-600">
+                            {formatBytes(file.fileSize)}
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-600">
+                            {formatDate(file.uploadedAt)}
+                          </td>
+                          <td className="px-6 py-3 flex gap-2">
+                            <button 
+                              onClick={() => handleDownload(file._id || file.id, file.originalName || file.fileName)}
+                              className="text-gray-600 hover:text-blue-600 text-sm"
+                              title="Download"
+                            >
+                              ⬇️
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(file._id || file.id)}
+                              className="text-gray-600 hover:text-red-600 text-sm"
+                              title="Delete"
+                            >
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* TRASH VIEW */}
+          {currentView === 'trash' && (
+            <div className="text-center py-12">
+              <p className="text-4xl mb-4">🗑️</p>
+              <p className="text-gray-500">Trash is empty</p>
+              <p className="text-sm text-gray-400 mt-2">Deleted files will appear here for 30 days</p>
             </div>
           )}
         </div>

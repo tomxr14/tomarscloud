@@ -109,13 +109,18 @@ const generateUsername = (email) => {
 // REGISTER
 app.post('/api/register', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, username } = req.body;
     
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
+    if (!email || !password || !username) {
+      return res.status(400).json({ error: 'Email, password, and username required' });
+    }
+
+    // Validate username length
+    if (username.trim().length < 2) {
+      return res.status(400).json({ error: 'Username must be at least 2 characters' });
     }
     
-    const username = generateUsername(email);
+    const cleanUsername = username.trim();
     let user;
     let userId;
 
@@ -125,9 +130,14 @@ app.post('/api/register', async (req, res) => {
       if (existingUser) {
         return res.status(400).json({ error: 'User already exists' });
       }
+
+      const existingUsername = await User.findOne({ username: cleanUsername });
+      if (existingUsername) {
+        return res.status(400).json({ error: 'Username already taken' });
+      }
       
       const hashedPassword = await bcrypt.hash(password, 10);
-      user = new User({ email, password: hashedPassword, username });
+      user = new User({ email, password: hashedPassword, username: cleanUsername });
       await user.save();
       userId = user._id.toString();
     } else {
@@ -135,13 +145,18 @@ app.post('/api/register', async (req, res) => {
       if (memoryDB.users[email]) {
         return res.status(400).json({ error: 'User already exists' });
       }
+
+      const userExists = Object.values(memoryDB.users).some(u => u.username === cleanUsername);
+      if (userExists) {
+        return res.status(400).json({ error: 'Username already taken' });
+      }
       
       const hashedPassword = await bcrypt.hash(password, 10);
       userId = 'user_' + Date.now();
       memoryDB.users[email] = {
         id: userId,
         email,
-        username,
+        username: cleanUsername,
         password: hashedPassword,
         createdAt: new Date()
       };
@@ -149,7 +164,7 @@ app.post('/api/register', async (req, res) => {
     
     // Generate JWT token immediately after registration
     const token = jwt.sign(
-      { userId, email, username },
+      { userId, email, username: cleanUsername },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -157,7 +172,7 @@ app.post('/api/register', async (req, res) => {
     res.json({
       message: 'User registered successfully',
       token,
-      user: { id: userId, email, username }
+      user: { id: userId, email, username: cleanUsername }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
