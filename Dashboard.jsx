@@ -357,7 +357,6 @@ export const Dashboard = ({ showAdminDashboard }) => {
             {getInitials(storageInfo?.fullName || user?.fullName || 'User')}
           </div>
           <h2 className="font-semibold text-gray-900">{getCloudName(storageInfo?.fullName || user?.fullName || 'User')}</h2>
-          <p className="text-xs text-gray-500">{storageInfo?.email || user?.email || 'user@example.com'}</p>
         </div>
 
         {/* Storage Progress */}
