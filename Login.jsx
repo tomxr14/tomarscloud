@@ -25,7 +25,7 @@ export const Login = ({ onLoginSuccess }) => {
       
       const body = isRegister 
         ? { email, password, username: email.split('@')[0], fullName } // Use email prefix as username
-        : { username, password }; // Login with email/username
+        : { email: username, username, password }; // Send both email and username for compatibility
 
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
