@@ -202,7 +202,13 @@ app.post('/api/register', async (req, res) => {
 // LOGIN
 app.post('/api/login', async (req, res) => {
   try {
-    const { email, username, password } = req.body;
+    let { email, username, password } = req.body;
+    
+    // If username contains @ and email is empty, treat username as email
+    if (!email && username && username.includes('@')) {
+      email = username;
+      username = null;
+    }
     
     // Allow login with either email or username
     if ((!email && !username) || !password) {
@@ -215,9 +221,9 @@ app.post('/api/login', async (req, res) => {
       // MongoDB Mode - search by email or username
       user = await User.findOne({
         $or: [
-          { email: email },
-          { username: username }
-        ]
+          email ? { email: email } : null,
+          username ? { username: username } : null
+        ].filter(Boolean)
       });
     } else {
       // IN-MEMORY Mode - search by email or username
