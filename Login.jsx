@@ -7,6 +7,7 @@ export const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
@@ -23,8 +24,8 @@ export const Login = ({ onLoginSuccess }) => {
       console.log(`📍 Endpoint: ${API_BASE}${endpoint}`);
       
       const body = isRegister 
-        ? { email, password, username }
-        : { username, password }; // Login with username/email, not separate email field
+        ? { email, password, username: email.split('@')[0], fullName } // Use email prefix as username
+        : { username, password }; // Login with email/username
 
       const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
@@ -75,30 +76,16 @@ export const Login = ({ onLoginSuccess }) => {
         <form onSubmit={handleSubmit}>
           {isRegister && (
             <div className="mb-4">
-              <label className="block text-gray-700 font-semibold mb-2">Full Name</label>
+              <label className="block text-gray-700 font-semibold mb-2">Your Full Name</label>
               <input
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                placeholder="Anurag Tomar"
+                placeholder="e.g., Anurag Tomar"
                 required={isRegister}
               />
-              <p className="text-sm text-gray-500 mt-1">This will be displayed as 'Anurag's Cloud'</p>
-            </div>
-          )}
-
-          {!isRegister && (
-            <div className="mb-4">
-              <label className="block text-gray-700 font-semibold mb-2">Username or Email</label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                placeholder="Your name or email"
-                required={!isRegister}
-              />
+              <p className="text-sm text-gray-500 mt-1">This will display as 'Anurag Tomar's Cloud'</p>
             </div>
           )}
 
@@ -113,7 +100,21 @@ export const Login = ({ onLoginSuccess }) => {
                 placeholder="your@email.com"
                 required={isRegister}
               />
-              <p className="text-sm text-gray-500 mt-1">We'll use this to verify your account</p>
+              <p className="text-sm text-gray-500 mt-1">Your login email</p>
+            </div>
+          )}
+
+          {!isRegister && (
+            <div className="mb-4">
+              <label className="block text-gray-700 font-semibold mb-2">Email Address</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
+                placeholder="your@email.com"
+                required={!isRegister}
+              />
             </div>
           )}
 

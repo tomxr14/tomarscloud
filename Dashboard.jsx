@@ -309,10 +309,10 @@ export const Dashboard = ({ showAdminDashboard }) => {
         {/* User Section */}
         <div className="p-4 border-b border-gray-200">
           <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center text-blue-700 font-bold text-lg mb-3">
-            {getInitials(storageInfo?.username || user?.username || 'User')}
+            {getInitials(storageInfo?.fullName || user?.fullName || 'User')}
           </div>
-          <h2 className="font-semibold text-gray-900">{getCloudName(storageInfo?.username || user?.username || 'User')}</h2>
-          <p className="text-xs text-gray-500">{storageInfo?.username || user?.username || 'User'}</p>
+          <h2 className="font-semibold text-gray-900">{getCloudName(storageInfo?.fullName || user?.fullName || 'User')}</h2>
+          <p className="text-xs text-gray-500">{storageInfo?.email || user?.email || 'user@example.com'}</p>
         </div>
 
         {/* Storage Progress */}
@@ -549,17 +549,17 @@ export const Dashboard = ({ showAdminDashboard }) => {
 
           {/* RECENT VIEW */}
           {currentView === 'recent' && (
-            <>
+            <div className="flex flex-col gap-4">
               {files.length === 0 ? (
-                <div className="text-center py-12">
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
                   <p className="text-4xl mb-4">🕐</p>
                   <p className="text-gray-500">No recent files</p>
                   <p className="text-sm text-gray-400 mt-2">Recently accessed files will appear here</p>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow-sm">
-                  <table className="w-full">
-                    <thead className="border-b border-gray-200">
+                <div className="overflow-x-auto">
+                  <table className="w-full bg-white rounded-lg shadow-sm">
+                    <thead className="bg-gray-50 border-b border-gray-200">
                       <tr className="text-left text-sm font-semibold text-gray-700">
                         <th className="px-6 py-3">Name</th>
                         <th className="px-6 py-3">Size</th>
@@ -568,7 +568,7 @@ export const Dashboard = ({ showAdminDashboard }) => {
                       </tr>
                     </thead>
                     <tbody>
-                      {files.slice(0, 10).map((file) => (
+                      {files && files.length > 0 && files.slice(0, 10).map((file) => (
                         <tr key={file._id || file.id} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="px-6 py-3 flex items-center gap-3">
                             <span className="text-xl">{getFileIcon(file.originalName || file.fileName)}</span>
@@ -602,7 +602,7 @@ export const Dashboard = ({ showAdminDashboard }) => {
                   </table>
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {/* TRASH VIEW */}

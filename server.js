@@ -33,6 +33,7 @@ const memoryDB = {
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   username: { type: String, unique: true },
+  fullName: { type: String }, // User's display name (e.g., "Anurag Tomar")
   password: { type: String, required: true },
   isAdmin: { type: Boolean, default: false }, // NEW: Admin flag
   createdAt: { type: Date, default: Date.now }
@@ -129,7 +130,7 @@ const generateUsername = (email) => {
 // REGISTER
 app.post('/api/register', async (req, res) => {
   try {
-    const { email, password, username } = req.body;
+    const { email, password, username, fullName } = req.body;
     
     if (!email || !password || !username) {
       return res.status(400).json({ error: 'Email, password, and username required' });
@@ -141,6 +142,7 @@ app.post('/api/register', async (req, res) => {
     }
     
     const cleanUsername = username.trim();
+    const cleanFullName = fullName ? fullName.trim() : cleanUsername; // Use username as fallback
     let user;
     let userId;
 
@@ -157,7 +159,12 @@ app.post('/api/register', async (req, res) => {
       }
       
       const hashedPassword = await bcrypt.hash(password, 10);
-      user = new User({ email, password: hashedPassword, username: cleanUsername });
+      user = new User({ 
+        email, 
+        password: hashedPassword, 
+        username: cleanUsername,
+        fullName: cleanFullName
+      });
       await user.save();
       userId = user._id.toString();
     } else {
@@ -177,6 +184,7 @@ app.post('/api/register', async (req, res) => {
         id: userId,
         email,
         username: cleanUsername,
+        fullName: cleanFullName,
         password: hashedPassword,
         createdAt: new Date()
       };
@@ -184,7 +192,7 @@ app.post('/api/register', async (req, res) => {
     
     // Generate JWT token immediately after registration
     const token = jwt.sign(
-      { userId, email, username: cleanUsername },
+      { userId, email, username: cleanUsername, fullName: cleanFullName },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -192,7 +200,7 @@ app.post('/api/register', async (req, res) => {
     res.json({
       message: 'User registered successfully',
       token,
-      user: { id: userId, email, username: cleanUsername }
+      user: { id: userId, email, username: cleanUsername, fullName: cleanFullName }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -247,8 +255,9 @@ app.post('/api/login', async (req, res) => {
     const userId = mongoConnected ? user._id.toString() : user.id;
     const userEmail = mongoConnected ? user.email : user.email;
     const userUsername = user.username || generateUsername(userEmail);
+    const userFullName = user.fullName || userUsername; // Use fullName if available
     const token = jwt.sign(
-      { userId, email: userEmail, username: userUsername },
+      { userId, email: userEmail, username: userUsername, fullName: userFullName },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -256,7 +265,7 @@ app.post('/api/login', async (req, res) => {
     res.json({ 
       message: 'Login successful',
       token,
-      user: { id: userId, email: userEmail, username: userUsername }
+      user: { id: userId, email: userEmail, username: userUsername, fullName: userFullName }
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -289,14 +298,14 @@ app.post('/api/init-admin', async (req, res) => {
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
-      res.json({ message: 'First admin created!', user: { email: user.email, username: user.username, isAdmin: user.isAdmin } });
+      res.json({ message: 'First admin created!', user: { email: user.email, username: user.username, fullName: user.fullName, isAdmin: user.isAdmin } });
     } else {
       const user = Object.values(memoryDB.users).find(u => u.id === userId);
       if (!user) {
         return res.status(404).json({ error: 'User not found' });
       }
       user.isAdmin = true;
-      res.json({ message: 'First admin created!', user: { email: user.email, username: user.username, isAdmin: user.isAdmin } });
+      res.json({ message: 'First admin created!', user: { email: user.email, username: user.username, fullName: user.fullName, isAdmin: user.isAdmin } });
     }
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -467,17 +476,17 @@ app.delete('/api/file/:id', verifyToken, async (req, res) => {
 // STORAGE INFO
 app.get('/api/storage-info', verifyToken, async (req, res) => {
   try {
-    let files, isAdmin;
+    let files, isAdmin, user;
     
     if (mongoConnected) {
       // MongoDB Mode
       files = await File.find({ userId: req.userId });
-      const user = await User.findById(req.userId);
+      user = await User.findById(req.userId);
       isAdmin = user?.isAdmin || false;
     } else {
       // IN-MEMORY Mode
       files = Object.values(memoryDB.files).filter(f => f.userId === req.userId);
-      const user = Object.values(memoryDB.users).find(u => u.id === req.userId);
+      user = Object.values(memoryDB.users).find(u => u.id === req.userId);
       isAdmin = user?.isAdmin || false;
     }
     
@@ -485,8 +494,9 @@ app.get('/api/storage-info', verifyToken, async (req, res) => {
     const totalQuota = 19 * 1024 * 1024 * 1024;
     
     res.json({
-      username: req.username,
-      email: req.email,
+      username: user?.username || req.username,
+      fullName: user?.fullName || user?.username,
+      email: user?.email || req.email,
       isAdmin,
       usedStorage: totalSize,
       totalStorage: totalQuota,
