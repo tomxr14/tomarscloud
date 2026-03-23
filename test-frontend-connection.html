@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Connection Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .pending { background-color: #cfe2ff; color: #084298; }
+        button { padding: 5px 10px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>TomarsCloud Connection Tester</h1>
+    <button onclick="runAllTests()">Run All Tests</button>
+    <button onclick="location.reload()">Refresh</button>
+    <hr>
+    <div id="results"></div>
+
+    <script>
+        const API_URLS = {
+            local: 'http://localhost:3010/api',
+            railway: 'https://web-production-57dae.up.railway.app/api',
+            cloudflare: 'https://tomarscloud.odd-leaf-4538.workers.dev/'
+        };
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+            console.log(`[${type}]`, message);
+        }
+
+        async function testEndpoint(url, name) {
+            try {
+                log(`🔄 Testing ${name}: ${url}`, 'pending');
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'Authorization': 'Bearer test' }
+                });
+                log(`✅ ${name} Status: ${response.status}`, response.ok ? 'success' : 'error');
+                return response.ok;
+            } catch (e) {
+                log(`❌ ${name} Error: ${e.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testRegistration(baseUrl) {
+            try {
+                log(`📝 Testing Registration at ${baseUrl}`, 'pending');
+                const response = await fetch(`${baseUrl}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'test' + Date.now() + '@example.com',
+                        password: 'Password123'
+                    })
+                });
+                const data = await response.json();
+                if (response.ok && data.userId) {
+                    log(`✅ Registration Success: Created user ${data.userId}`, 'success');
+                    return data;
+                } else {
+                    log(`⚠️  Registration failed: ${JSON.stringify(data)}`, 'error');
+                    return null;
+                }
+            } catch (e) {
+                log(`❌ Registration Error: ${e.message}`, 'error');
+                return null;
+            }
+        }
+
+        async function testLogin(baseUrl, email, password) {
+            try {
+                log(`🔐 Testing Login at ${baseUrl}`, 'pending');
+                const response = await fetch(`${baseUrl}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await response.json();
+                if (response.ok && data.token) {
+                    log(`✅ Login Success: Token received`, 'success');
+                    return data.token;
+                } else {
+                    log(`⚠️  Login failed: ${JSON.stringify(data)}`, 'error');
+                    return null;
+                }
+            } catch (e) {
+                log(`❌ Login Error: ${e.message}`, 'error');
+                return null;
+            }
+        }
+
+        async function runAllTests() {
+            document.getElementById('results').innerHTML = '';
+            log('🚀 Starting comprehensive connectivity tests...', 'pending');
+            log('');
+
+            // Test 1: Local Server
+            log('=== TEST 1: LOCAL SERVER (Port 3010) ===', 'pending');
+            const localWorks = await testEndpoint(API_URLS.local + '/storage-info', 'Local Storage Info');
+            
+            if (localWorks) {
+                const user = await testRegistration(API_URLS.local);
+                if (user) {
+                    const token = await testLogin(API_URLS.local, user.email, 'Password123');
+                }
+            }
+            log('');
+
+            // Test 2: Railway Backend
+            log('=== TEST 2: RAILWAY BACKEND ===', 'pending');
+            const railwayWorks = await testEndpoint(API_URLS.railway + '/storage-info', 'Railway Storage Info');
+            
+            if (railwayWorks) {
+                const user = await testRegistration(API_URLS.railway);
+                if (user) {
+                    const token = await testLogin(API_URLS.railway, user.email, 'Password123');
+                }
+            }
+            log('');
+
+            // Test 3: CORS and Cloudflare
+            log('=== TEST 3: CLOUDFLARE FRONTEND ===', 'pending');
+            try {
+                const response = await fetch(API_URLS.cloudflare);
+                log(`✅ Cloudflare Frontend Status: ${response.status}`, response.ok ? 'success' : 'error');
+            } catch (e) {
+                log(`❌ Cloudflare Frontend Error: ${e.message}`, 'error');
+            }
+            log('');
+
+            // Summary
+            log('=== SUMMARY ===', 'pending');
+            log(`Local Server: ${localWorks ? '✅ WORKING' : '❌ NOT WORKING'}`, localWorks ? 'success' : 'error');
+            log(`Railway Backend: ${railwayWorks ? '✅ WORKING' : '❌ NOT WORKING'}`, railwayWorks ? 'success' : 'error');
+            log('Run this test from the frontend to check CORS issues', 'info');
+        }
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            log('✅ Test page loaded. Click "Run All Tests" button to start.', 'success');
+        });
+    </script>
+</body>
+</html>
