@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from './AuthContext';
 
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://web-production-57dae.up.railway.app/api';
 
 export const Login = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
