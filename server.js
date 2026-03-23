@@ -107,6 +107,9 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Email and password required' });
     }
     
+    let user;
+    let userId;
+
     if (mongoConnected) {
       // MongoDB Mode
       const existingUser = await User.findOne({ email });
@@ -115,14 +118,9 @@ app.post('/api/register', async (req, res) => {
       }
       
       const hashedPassword = await bcrypt.hash(password, 10);
-      const user = new User({ email, password: hashedPassword });
+      user = new User({ email, password: hashedPassword });
       await user.save();
-      
-      res.json({ 
-        message: 'User registered successfully', 
-        userId: user._id,
-        email: user.email 
-      });
+      userId = user._id.toString();
     } else {
       // IN-MEMORY Mode
       if (memoryDB.users[email]) {
@@ -130,20 +128,27 @@ app.post('/api/register', async (req, res) => {
       }
       
       const hashedPassword = await bcrypt.hash(password, 10);
-      const userId = 'user_' + Date.now();
+      userId = 'user_' + Date.now();
       memoryDB.users[email] = {
         id: userId,
         email,
         password: hashedPassword,
         createdAt: new Date()
       };
-      
-      res.json({ 
-        message: 'User registered successfully', 
-        userId,
-        email 
-      });
     }
+    
+    // Generate JWT token immediately after registration
+    const token = jwt.sign(
+      { userId, email },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    res.json({
+      message: 'User registered successfully',
+      token,
+      user: { id: userId, email }
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
