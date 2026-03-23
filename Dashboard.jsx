@@ -41,6 +41,8 @@ export const Dashboard = ({ showAdminDashboard }) => {
   const [storageInfo, setStorageInfo] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [notification, setNotification] = useState(null);
   const [currentFolder, setCurrentFolder] = useState('');
   const [breadcrumb, setBreadcrumb] = useState(['Drive']);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
@@ -49,6 +51,14 @@ export const Dashboard = ({ showAdminDashboard }) => {
   const [currentView, setCurrentView] = useState('drive'); // 'drive', 'starred', 'recent', 'trash'
   const [showNewMenu, setShowNewMenu] = useState(false);
   const { token, logout, user } = useAuth();
+
+  // Show notification toast
+  const showNotification = (message, type = 'success', duration = 3000) => {
+    setNotification({ message, type });
+    if (duration > 0) {
+      setTimeout(() => setNotification(null), duration);
+    }
+  };
 
   // Get user's initials (e.g., "Anurag Tomar" → "AT")
   const getInitials = (username) => {
@@ -70,8 +80,16 @@ export const Dashboard = ({ showAdminDashboard }) => {
 
   // Load storage info and files on mount
   useEffect(() => {
-    loadStorageInfo();
-    loadFiles();
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        await loadStorageInfo();
+        await loadFiles();
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, [currentFolder, token]);
 
   const loadStorageInfo = async () => {
@@ -86,6 +104,7 @@ export const Dashboard = ({ showAdminDashboard }) => {
       console.log('✅ Storage info loaded:', data);
     } catch (err) {
       console.error('❌ Error loading storage info:', err);
+      showNotification('Failed to load storage info', 'error');
     }
   };
 
@@ -163,9 +182,10 @@ export const Dashboard = ({ showAdminDashboard }) => {
 
       loadFiles();
       loadStorageInfo();
+      showNotification(`${fileList.length} file(s) uploaded successfully!`, 'success');
     } catch (err) {
       console.error('❌ Upload error:', err);
-      alert('Upload failed: ' + err.message);
+      showNotification('Upload failed: ' + err.message, 'error');
     } finally {
       setUploading(false);
       event.target.value = '';
@@ -241,11 +261,15 @@ export const Dashboard = ({ showAdminDashboard }) => {
 
       if (response.ok) {
         console.log(`✅ File deleted`);
+        showNotification('File moved to trash', 'success');
         loadFiles();
         loadStorageInfo();
+      } else {
+        showNotification('Failed to delete file', 'error');
       }
     } catch (err) {
       console.error('❌ Delete error:', err);
+      showNotification('Error deleting file: ' + err.message, 'error');
     }
   };
 
@@ -304,6 +328,27 @@ export const Dashboard = ({ showAdminDashboard }) => {
 
   return (
     <div className="flex h-screen bg-gray-50">
+      {/* Notification Toast */}
+      {notification && (
+        <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 animate-in fade-in slide-in-from-top ${
+          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          {notification.message}
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-10 flex items-center justify-center z-40">
+          <div className="bg-white rounded-lg p-6 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
+              <span className="text-gray-700">Loading...</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
         {/* User Section */}
