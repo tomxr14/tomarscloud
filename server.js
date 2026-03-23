@@ -1174,6 +1174,7 @@ async function startServer() {
       console.log('   Error:', mongoErr.message);
     }
     
+    // Trigger Railway rebuild - fullName support enabled
     app.listen(PORT, () => {
       console.log(`
 ╔════════════════════════════════════════════════╗
