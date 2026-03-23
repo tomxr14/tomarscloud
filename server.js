@@ -263,6 +263,46 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// INITIALIZE FIRST ADMIN (Only works if no admins exist)
+app.post('/api/init-admin', async (req, res) => {
+  try {
+    let hasAdmins;
+    
+    if (mongoConnected) {
+      hasAdmins = await User.countDocuments({ isAdmin: true });
+    } else {
+      hasAdmins = Object.values(memoryDB.users).some(u => u.isAdmin);
+    }
+    
+    if (hasAdmins) {
+      return res.status(403).json({ error: 'Admin already exists. Contact current admin to promote you.' });
+    }
+    
+    // Get user ID from body
+    const userId = req.body.userId;
+    if (!userId) {
+      return res.status(400).json({ error: 'userId required' });
+    }
+    
+    if (mongoConnected) {
+      const user = await User.findByIdAndUpdate(userId, { isAdmin: true }, { new: true });
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      res.json({ message: 'First admin created!', user: { email: user.email, username: user.username, isAdmin: user.isAdmin } });
+    } else {
+      const user = Object.values(memoryDB.users).find(u => u.id === userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      user.isAdmin = true;
+      res.json({ message: 'First admin created!', user: { email: user.email, username: user.username, isAdmin: user.isAdmin } });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // UPLOAD FILE
 app.post('/api/upload', verifyToken, upload.single('file'), async (req, res) => {
   try {
