@@ -106,13 +106,13 @@ export const Login = ({ onLoginSuccess }) => {
 
           {!isRegister && (
             <div className="mb-4">
-              <label className="block text-gray-700 font-semibold mb-2">Email Address</label>
+              <label className="block text-gray-700 font-semibold mb-2">Email or Username</label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                placeholder="your@email.com"
+                placeholder="your@email.com or username"
                 required={!isRegister}
               />
             </div>
