@@ -508,6 +508,54 @@ app.get('/api/storage-info', verifyToken, async (req, res) => {
   }
 });
 
+// UPDATE USER PROFILE (fullName)
+app.put('/api/profile', verifyToken, async (req, res) => {
+  try {
+    const { fullName } = req.body;
+    
+    if (!fullName || fullName.trim().length < 2) {
+      return res.status(400).json({ error: 'Full name must be at least 2 characters' });
+    }
+
+    const cleanFullName = fullName.trim();
+    
+    if (mongoConnected) {
+      const user = await User.findByIdAndUpdate(
+        req.userId,
+        { fullName: cleanFullName },
+        { new: true }
+      );
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      res.json({ 
+        message: 'Profile updated successfully',
+        user: { 
+          email: user.email, 
+          username: user.username, 
+          fullName: user.fullName 
+        } 
+      });
+    } else {
+      const user = Object.values(memoryDB.users).find(u => u.id === req.userId);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      user.fullName = cleanFullName;
+      res.json({ 
+        message: 'Profile updated successfully',
+        user: { 
+          email: user.email, 
+          username: user.username, 
+          fullName: user.fullName 
+        } 
+      });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET TRASH - List all deleted files
 app.get('/api/trash', verifyToken, async (req, res) => {
   try {
